@@ -18,6 +18,7 @@ left_a = 410
 left_d = 540
 barrier = False
 # Load block images from directory
+shields = []
 block_images = []
 block_directory = 'unbg'
 shield = pygame.image.load('images\image (2).png')
@@ -26,13 +27,16 @@ for filename in os.listdir(block_directory):
     if filename.endswith(".png"):
         image = pygame.image.load(os.path.join(block_directory, filename)).convert_alpha()  # Load with alpha channel
         block_images.append(image)
-shields = []
-
+red_surface = pygame.Surface((100, 100), pygame.SRCALPHA)  # Создаем поверхность с альфа-каналом
+red_surface.fill((255, 0, 0, 128))  # Заполняем красным цветом с
 # Bonus coffee
 bonus_coffee = pygame.image.load('images\cofe.png')
 coffe_life = pygame.image.load('images\coffee.png')
 red_balls = []
+################################################################################################
 bg_window = pygame.image.load('images\windows_xp_original-wallpaper-1280x800-transformed.jpeg')
+first_frame = pygame.image.load('images\\10 (3).jpg')
+second_frame = pygame.image.load('images\\11.jpg')
 
 shield_picked_up = False
 shield_pickup_time = None
@@ -79,6 +83,7 @@ def update_shields():
                 shields.remove(shield1)
                 coin_colision_sound.play()
                 barrier = True
+frame2 = True
 agree = True
 timer = True
 player = True
@@ -90,7 +95,10 @@ unloose = True
 second_chance = False
 retry = True
 new_game = False
+timer2 = True
 space_agree = False
+passed_agree = True
+frame3 = True
 sp = 5
 sp2 = 0
 coffe_counter = 0
@@ -101,7 +109,7 @@ paddleSpeed = 20 + sp
 paddle_surface = pygame.Surface((paddleW, paddleH), pygame.SRCALPHA)  # Create surface with alpha channel
 paddle = paddle_surface.get_rect(center=(W // 2, H - paddleH - 50))  # Center paddle
 pygame.draw.rect(paddle_surface, (255, 255, 255, 0), paddle)  # Draw transparent rectangle on surface
-
+passed_after = False
 # CD settings
 cd_image_path = 'images\cd_ball.png'
 glass_paddle = pygame.image.load('images\Remove-bg.ai_1713611941284.png')
@@ -115,7 +123,8 @@ bonus_cd = pygame.Rect(random.randrange(cd_rect.width, W - cd_rect.width), H // 
 
 ballSpeed = 6
 dx, dy = 1, -1
-
+frames = ['images\\10 (3).jpg','images\\11.jpg','images\\21.jpg']
+frame_counter = 0
 game_font = pygame.font.SysFont('comicsansms', 50, True)
 settings_text = game_font.render('Settings', True, 'Black')
 
@@ -150,7 +159,7 @@ def detect_collision(dx, dy, cd_ball, rect):
     elif delta_y > delta_x:
         dx = -dx
     return dx, dy
-
+frame = False
 # Load block positions
 block_list = [pygame.Rect(10 + 120 * i, 50 + 70 * j, 100, 50) for i in range(10) for j in range(4)]
 block_flags = [False] * len(block_list)
@@ -178,6 +187,10 @@ while not done:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             done = True
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1:
+                if red_surface.get_rect(topleft=(1000, 600)).collidepoint(event.pos):
+                    frame_counter +=1
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 paused = not paused
@@ -263,7 +276,7 @@ while not done:
 
     if hit_index != -1:
         hit_rect = block_list.pop(hit_index)
-        dx, dy = detect_collision(dx, dy, cd_ball, hit_rect)
+        #dx, dy = detect_collision(dx, dy, cd_ball, hit_rect)
         game_score += 1
         if win_agree:
             if cls1:
@@ -292,7 +305,6 @@ while not done:
         game_score_text = game_score_font.render(f'Your game score is: {game_score}', True, ("black"))
         screen.blit(game_score_text, game_score_rect)
         screen.blit(glass_paddle, (left_a, left_d))
-
     # Win/lose screens
     if cd_ball.bottom > 1000:
             barrier = False
@@ -317,10 +329,17 @@ while not done:
                             wasted_sound.play()
                             player = False
     elif not len(block_list):
-        screen.fill((0, 0, 0))
+        screen.fill((0, 0, 0)) 
         screen.blit(passed,(350,150))
-        pygame.display.update()
+        if passed_agree:
+            pygame.display.update()
         win_agree = False
+        if timer:
+            time = pygame.time.get_ticks()
+            timer = False
+        if pygame.time.get_ticks() - time > 5000:
+            passed_after = True
+            passed_agree = False
         if agree:
             passed_sound.play()
             agree = False
@@ -344,13 +363,14 @@ while not done:
         if win_agree:
             screen.blit(shield, (0, 768))
             pygame.draw.rect(screen, (0, 0, 0), (0, H - 1, W, 1))
-
     # Check collision of CD ball with the barrier
     if barrier:
       if cd_ball.colliderect(pygame.Rect(0, H - 1, W, 1)):
          dx, dy = detect_collision(dx, dy, cd_ball, pygame.Rect(0, H - 1, W, 1))
          barrier = False
-         
+    if passed_after:
+        screen.blit(pygame.image.load(frames[frame_counter]), (0, 0))
+        pygame.display.update()  
     if win_agree:
         pygame.display.flip()
     clock.tick(FPS)
