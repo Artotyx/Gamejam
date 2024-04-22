@@ -291,7 +291,7 @@ while not done:
 
     if hit_index != -1:
         hit_rect = block_list.pop(hit_index)
-        #dx, dy = detect_collision(dx, dy, cd_ball, hit_rect)
+        dx, dy = detect_collision(dx, dy, cd_ball, hit_rect)
         game_score += 1
         if win_agree:
             if cls1:
