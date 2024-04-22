@@ -5,6 +5,8 @@ import math
 
 pygame.init()
 
+pygame.mixer.music.load(f'musicP.mp3')
+pygame.mixer.music.play(-1)
 WIDTH = 900
 HEIGHT = 950
 menu = pygame.image.load('pacmanmenu.jpg')
@@ -688,6 +690,9 @@ def draw_misc():
         screen.blit(pygame.transform.scale(player_images[0], (30, 30)), (650 + i * 40, 915))
     
     if game_over:
+        pygame.mixer.music.pause()
+        gameOv = pygame.mixer.Sound('gameover.wav')
+        gameOv.play(1)
         # Load game over PNG image
         game_over_image = pygame.image.load('14.jpg').convert_alpha()
         scaled_width = game_over_image.get_width() // 4
@@ -737,7 +742,9 @@ def draw_misc():
                     quit()  # Exit the game
     
     if game_won:
+        gameWin = pygame.mixer.Sound('win.wav')
         # Load victory PNG image
+        gameWin.play(1)
         victory_image = pygame.image.load('15.jpg').convert_alpha()
         scaled_width = victory_image.get_width() // 4
         scaled_height = victory_image.get_height() // 4
