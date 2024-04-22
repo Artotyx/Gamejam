@@ -29,6 +29,8 @@ for filename in os.listdir(block_directory):
         block_images.append(image)
 red_surface = pygame.Surface((100, 100), pygame.SRCALPHA)  # Создаем поверхность с альфа-каналом
 red_surface.fill((255, 0, 0, 128))  # Заполняем красным цветом с
+green_surface = pygame.Surface((200, 120), pygame.SRCALPHA)  # Создаем поверхность с альфа-каналом
+green_surface.fill((0, 255, 0, 200))  # Заполняем красным цветом с
 # Bonus coffee
 bonus_coffee = pygame.image.load('images\cofe.png')
 coffe_life = pygame.image.load('images\coffee.png')
@@ -37,7 +39,7 @@ red_balls = []
 bg_window = pygame.image.load('images\windows_xp_original-wallpaper-1280x800-transformed.jpeg')
 first_frame = pygame.image.load('images\\10 (3).jpg')
 second_frame = pygame.image.load('images\\11.jpg')
-
+runer2 = True
 shield_picked_up = False
 shield_pickup_time = None
 
@@ -115,6 +117,7 @@ cd_image_path = 'images\cd_ball.png'
 glass_paddle = pygame.image.load('images\Remove-bg.ai_1713611941284.png')
 wasted_sound = pygame.mixer.Sound('audio\gta-v-wasted-101soundboards (mp3cut.net) (1).mp3')
 passed_sound = pygame.mixer.Sound('audio\gta-san-andreas-mission-passed-made-with-Voicemod.mp3')
+button = pygame.image.load('images\IMG_6475-removebg-preview-removebg-preview.png')
 cd = pygame.image.load(cd_image_path)
 cd_radius = 50
 cd_rect = cd.get_rect()
@@ -182,14 +185,26 @@ counter = 0
 
 bottom_barrier_visible = False
 bottom_barrier_time = 0
-
+while runer2:
+    done = True
+    screen.blit(pygame.image.load('images\\arkanoid.jpg'),(0,0))
+    #pygame.draw.rect(screen,"red",(600,600,100,120))
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            runer2 = False
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1:
+                if green_surface.get_rect(topleft=(500, 600)).collidepoint(event.pos):
+                     done = False
+                     runer2 = False
+    pygame.display.update()
 while not done:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             done = True
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
-                if red_surface.get_rect(topleft=(1000, 600)).collidepoint(event.pos):
+                if red_surface.get_rect(topleft=(1000,600)).collidepoint(event.pos):
                     frame_counter +=1
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
@@ -370,6 +385,7 @@ while not done:
          barrier = False
     if passed_after:
         screen.blit(pygame.image.load(frames[frame_counter]), (0, 0))
+        screen.blit(button,(1000,600))
         pygame.display.update()  
     if win_agree:
         pygame.display.flip()
