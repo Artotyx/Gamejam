@@ -2,12 +2,10 @@ import copy
 from board import boards
 import pygame
 import math
-
 pygame.init()
 import pygame
 import random
 import os
-
 pygame.init()
 run3 = False
 run = True
@@ -20,7 +18,7 @@ menu = pygame.image.load('pacmanmenu.jpg')
 screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.RESIZABLE)
 timer = pygame.time.Clock()
 space_surface = font.render("Press Space to Restart", True, "white")
-space_rect = space_surface.get_rect(center=(625,530))
+space_rect = space_surface.get_rect(center=(625,500))
 fps = 60
 font = pygame.font.Font('freesansbold.ttf', 20)
 level = copy.deepcopy(boards)
@@ -1549,7 +1547,7 @@ if runer2:
     while runer2:
         done = True
         screen.blit(pygame.image.load('images\\arkanoid.jpg'),(0,0))
-        #pygame.draw.rect(screen,"red",(600,600,100,120))
+        #pygame.draw.rect(screen,"red",(470,610,250,120))
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 runer2 = False
@@ -1603,6 +1601,11 @@ while not done:
                 elif event.key == pygame.K_r:
                     paused = True
     if new_game:
+        game_score = 0
+        coffe_counter = 0
+        coffe1 = False
+        coffe2 = False
+        coffe3 = False
         block_list = [pygame.Rect(10 + 120 * i, 50 + 70 * j, 100, 50) for i in range(10) for j in range(4)]
         block_flags = [False] * len(block_list)
         blocks = [(random.choice(block_images), block_pos) for block_pos in block_list]
