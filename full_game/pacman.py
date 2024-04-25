@@ -15,9 +15,12 @@ end_game = False
 # Set up the window
 WIDTH = 900
 HEIGHT = 950
+font = pygame.font.Font(None, 36)
 menu = pygame.image.load('pacmanmenu.jpg')
 screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.RESIZABLE)
 timer = pygame.time.Clock()
+space_surface = font.render("Press Space to Restart", True, "white")
+space_rect = space_surface.get_rect(center=(625,530))
 fps = 60
 font = pygame.font.Font('freesansbold.ttf', 20)
 level = copy.deepcopy(boards)
@@ -1697,6 +1700,7 @@ while not done:
                         if pygame.time.get_ticks() - time > 2500:
                             space_agree = True
                             screen.blit(wasted, (375, 150))
+                            screen.blit(space_surface, space_rect)
                         pygame.display.update()
                         if player:
                             wasted_sound.play()
