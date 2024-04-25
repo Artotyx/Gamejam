@@ -9,7 +9,9 @@ import random
 import os
 
 pygame.init()
-
+run3 = False
+run = True
+end_game = False
 # Set up the window
 WIDTH = 900
 HEIGHT = 950
@@ -83,13 +85,55 @@ game_over = False
 game_won = False
 green_surface = pygame.Surface((240, 115), pygame.SRCALPHA)  # Создаем поверхность с альфа-каналом
 green_surface.fill((0, 255, 0, 200))  # Заполняем красным цветом с
-runer2 = True
+begin_surface = pygame.Surface((100, 100), pygame.SRCALPHA)  # Создаем поверхность с альфа-каналом
+begin_surface.fill((0, 255, 0, 200))
+start_surface = pygame.Surface((390, 145), pygame.SRCALPHA)  # Создаем поверхность с альфа-каналом
+start_surface.fill((0, 255, 0, 200))# Заполняем красным цветом с
+runer2 = False
 runer3 = True
 run3 = False
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 window = pygame.display.set_mode((1200, 800))
 window_del = True
 end_game = False
+run_0 = True
+start_agree = False
+start_frame_counter = 0
+start_frame = pygame.image.load('images\Arnur\'s Mission Glasses Recovery (2).jpg')
+starting_frames = ['images\\2.jpg',
+                   'images\\3.jpg',
+                   'images\\4.jpg',
+                   'images\\5.jpg',
+                   'images\\6.jpg',
+                   'images\\7.jpg',
+                   'images\8.jpg',
+                   'images\9.jpg',
+                   'images\9.jpg'
+                   ]
+while run_0:
+    #pygame.draw.rect(screen,"red",(500,300,200,100))
+    if not start_agree:
+        screen.blit(pygame.image.load('images\Arnur\'s Mission Glasses Recovery (2).jpg'),(0,0))
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            run_0 = False
+            runer2 =  False
+            runer3 = False
+            run3 = False
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1:
+                if begin_surface.get_rect(topleft=(1000,600)).collidepoint(event.pos):
+                    start_frame_counter +=1
+                elif start_surface.get_rect(topleft=(405,390)).collidepoint(event.pos):
+                    start_agree = True
+    if start_frame_counter == 8:
+        run_0 = False
+        runer2 = True
+    if start_agree:
+        screen.blit(pygame.image.load(starting_frames[start_frame_counter]),(0,0))
+        screen.blit(button,(1000,600))
+    #pygame.draw.rect(screen,"red",(405,390,390,145))
+    pygame.display.update()
 while runer2:
     WIDTH = 1200
     HEIGHT = 800
@@ -695,7 +739,7 @@ class Ghost:
 
 
 def draw_misc():
-    global game_over, window_del
+    global game_over, window_del, run3, run, end_game
     score_text = font.render(f'Score: {score}', True, 'white')
     screen.blit(score_text, (10, 920))
     
@@ -716,7 +760,7 @@ def draw_misc():
         # Calculate position to center the image on the screen
         center_x = (900 - scaled_width) // 2
         center_y = (950 - scaled_height) // 2
-        screen.fill("black")
+        screen.fill("white")
         screen.blit(scaled_image, (0, 150))  # Draw centered scaled image
         
         # Add Yes and No buttons
@@ -756,20 +800,10 @@ def draw_misc():
                     quit()  # Exit the game
     
     if game_won:
-        # Load victory PNG image
-        victory_image = pygame.image.load('15.jpg').convert_alpha()
-        scaled_width = victory_image.get_width() // 4
-        scaled_height = victory_image.get_height() // 4
-        scaled_image = pygame.transform.scale(victory_image, (scaled_width, scaled_height))
+        run3 = True
+        run = False
+        end_game = True
         
-        center_x = (900 - scaled_width) // 2
-        center_y = (950 - scaled_height) // 2
-        
-        screen.blit(scaled_image, (center_x, center_y))
-        
-        gameover_text = font.render('Space bar to restart!', True, 'green')
-        screen.blit(gameover_text, (center_x , center_y - 20))
-
 
 def check_collisions(scor, power, power_count, eaten_ghosts):
     num1 = (HEIGHT - 50) // 32
@@ -1324,10 +1358,10 @@ if end_game:
                     if pac_surface.get_rect(topleft=(740,640)).collidepoint(event.pos):
                         runer2 = True
                         run3 = False
-            screen.fill("black")
+            screen.fill("White")
             screen.blit(scaled_image,(0,150))
             screen.blit(button,(740,640))
-            pygame.draw.rect(screen,"red",(740,640,100,100))
+            #pygame.draw.rect(screen,"red",(740,640,100,100))
         pygame.display.update()
 W, H = 1200, 800
 FPS = 60
