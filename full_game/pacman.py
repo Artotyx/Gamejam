@@ -6,10 +6,189 @@ pygame.init()
 import pygame
 import random
 import os
+import pygame
+from pygame.locals import *
+import random
 pygame.init()
 run3 = False
 run = True
 end_game = False
+clock = pygame.time.Clock()
+fps = 60
+score_counter = 0
+screen_width = 1200
+screen_height = 800
+flappy_start = pygame.image.load('images\start_flappy.jpg')
+flappy_win = pygame.image.load('images\\15.jpg')
+flappy_start_cycle = True
+flappy_surface = pygame.Surface((240, 115), pygame.SRCALPHA)  # Создаем поверхность с альфа-каналом
+flappy_surface.fill((255, 0, 0, 128))  # Заполняем красным цветом с
+flappy_to_pac_surface = pygame.Surface((100, 100), pygame.SRCALPHA)  # Создаем поверхность с альфа-каналом
+flappy_to_pac_surface.fill((255, 0, 0, 128))  # Заполняем красным цветом с
+font = pygame.font.Font(None, 36)
+
+# Цвет текста
+flappy_text_color = (255, 255, 255)
+
+# Создание текстовой поверхности
+flappy_text_surface = font.render("10 points to pass", True, flappy_text_color)
+
+# Получение прямоугольника, ограничивающего текст
+flappy_text_rect = flappy_text_surface.get_rect()
+
+# Положение текста
+flappy_text_rect.center = (110, 20)       
+screen = pygame.display.set_mode((screen_width, screen_height))
+pygame.display.set_caption('Flappy Bird')
+#define font
+font = pygame.font.SysFont('Bauhaus 93', 60)
+
+#define colours
+white = (255, 255, 255)
+
+#define game variables
+ground_scroll = -1200
+scroll_speed = 4
+flying = False
+game_over = False
+pipe_gap = 300
+pipe_frequency = 1500 #milliseconds
+last_pipe = pygame.time.get_ticks() - pipe_frequency
+score = 0
+pass_pipe = False
+
+
+#load images
+flappy_bg = pygame.image.load('images\\799254_flappy_generator_plus_create_your_own_flappy_bird_game_9600x950.png')
+ground_img = pygame.image.load('images\hz-removebg-preview.png')
+button_img = pygame.image.load('images/restart.png')
+numbers = [pygame.image.load('images\\0.png'), pygame.image.load('images\\1.png'),
+           pygame.image.load('images\\2.png'), pygame.image.load('images\\3.png'),
+           pygame.image.load('images\\4.png'), pygame.image.load('images\\5.png'),
+           pygame.image.load('images\\6.png'), pygame.image.load('images\\7.png'),
+           pygame.image.load('images\8.png'), pygame.image.load('images\9.png')]
+# Dictionary to store numbers and their corresponding images
+number_images = {0: numbers[0], 1: numbers[1], 2: numbers[2], 3: numbers[3],
+                 4: numbers[4], 5: numbers[5], 6: numbers[6], 7: numbers[7],
+                 8: numbers[8], 9: numbers[9]}
+for i in range(10):
+    if number_images[i] is None:
+        print(f"Image {i} is not loaded.")
+# Function to draw the score using number images
+def draw_score(score):
+    score_str = str(score)
+    x = int(screen_width / 2) - 30 * len(score_str) / 2
+    y = 20
+    for digit in score_str:
+        screen.blit(number_images[int(digit)], (x, y))
+        x += 30  
+
+#function for outputting text onto the screen
+def draw_text(text, font, text_col, x, y):
+    img = font.render(text, True, text_col)
+    screen.blit(img, (x, y))
+
+# Function for debug output
+def debug_output():
+    print("Debug output - score:", score)
+
+def reset_game():
+    global score
+    pipe_group.empty()
+    flappy.rect.x = 100
+    flappy.rect.y = int(screen_height / 2)
+    score = 0
+    return score
+
+class Bird(pygame.sprite.Sprite):
+
+    def __init__(self, x, y):
+        pygame.sprite.Sprite.__init__(self)
+        self.images = []
+        self.index = 0
+        self.counter = 0
+        img = pygame.image.load(f"images/pixil-frame-0 (3).png")
+        self.images.append(img)
+        self.image = self.images[self.index]
+        self.rect = self.image.get_rect()
+        self.rect.center = [x, y]
+        self.vel = 0
+        self.clicked = False
+
+    def update(self):
+
+        if flying == True:
+            self.vel += 0.5
+            if self.vel > 8:
+                self.vel = 8
+            if self.rect.bottom < 768:
+                self.rect.y += int(self.vel)
+
+        if game_over == False:
+            if pygame.mouse.get_pressed()[0] == 1 and self.clicked == False:
+                self.clicked = True
+                self.vel = -10
+            if pygame.mouse.get_pressed()[0] == 0:
+                self.clicked = False
+
+            flap_cooldown = 5
+            self.counter += 1
+            
+            if self.counter > flap_cooldown:
+                self.counter = 0
+                self.index += 1
+                if self.index >= len(self.images):
+                    self.index = 0
+                self.image = self.images[self.index]
+            self.image = pygame.transform.rotate(self.images[self.index], self.vel * -2)
+        else:
+            self.image = pygame.transform.rotate(self.images[self.index], -90)
+
+class Pipe(pygame.sprite.Sprite):
+
+    def __init__(self, x, y, position):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.image.load("images/pipe (1).png")
+        self.rect = self.image.get_rect()
+        if position == 1:
+            self.image = pygame.transform.flip(self.image, False, True)
+            self.rect.bottomleft = [x, y - int(pipe_gap / 2)]
+        elif position == -1:
+            self.rect.topleft = [x, y + int(pipe_gap / 2)]
+
+    def update(self):
+        self.rect.x -= scroll_speed
+        if self.rect.right < 0:
+            self.kill()
+
+class Button():
+    def __init__(self, x, y, image):
+        self.image = image
+        self.rect = self.image.get_rect()
+        self.rect.topleft = (x, y)
+
+    def draw(self):
+        action = False
+        pos = pygame.mouse.get_pos()
+
+        if self.rect.collidepoint(pos):
+            if pygame.mouse.get_pressed()[0] == 1:
+                action = True
+
+        screen.blit(self.image, (self.rect.x, self.rect.y))
+
+        return action
+
+pipe_group = pygame.sprite.Group()
+bird_group = pygame.sprite.Group()
+
+flappy = Bird(100, int(screen_height / 2))
+
+bird_group.add(flappy)
+
+button_flappy = Button(screen_width // 2 - 50, screen_height // 2 - 100, button_img)
+
+flappy_run = False
 # Set up the window
 WIDTH = 900
 HEIGHT = 950
@@ -129,30 +308,12 @@ while run_0:
                     start_agree = True
     if start_frame_counter == 8:
         run_0 = False
-        runer2 = True
+        run = False
+        flappy_start_cycle = True
     if start_agree:
         screen.blit(pygame.image.load(starting_frames[start_frame_counter]),(0,0))
         screen.blit(button,(1000,600))
     #pygame.draw.rect(screen,"red",(405,390,390,145))
-    pygame.display.update()
-while runer2:
-    WIDTH = 1200
-    HEIGHT = 800
-    run = False
-    #screen2 = pygame.display.set_mode((1200, 800))
-    screen.blit(menu,(0,0))
-    #pygame.draw.rect(screen,"red",(493,635,240,115))
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            runer2 = False
-        elif event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1:
-                if green_surface.get_rect(topleft=(493, 635)).collidepoint(event.pos):
-                     runer2 = False
-                     run = True
-                     HEIGHT = 950
-                     WIDTH = 900
-                     screen = pygame.display.set_mode((WIDTH, HEIGHT))
     pygame.display.update()
 class Ghost:
     def __init__(self, x_coord, y_coord, target, speed, img, direct, dead, box, id):
@@ -1004,11 +1165,289 @@ def get_targets(blink_x, blink_y, ink_x, ink_y, pink_x, pink_y, clyd_x, clyd_y):
         else:
             clyd_target = return_target
     return [blink_target, ink_target, pink_target, clyd_target]
+runer2 = False
+W, H = 1200, 800
+FPS = 60
+game_score = 0
+paused = True
+coun = 0
+screen = pygame.display.set_mode((W, H), pygame.RESIZABLE)
+clock = pygame.time.Clock()
+bg = (0, 0, 0)
+left_a = 410
+left_d = 540
+barrier = False
+# Load block images from directory
+shields = []
+block_images = []
+block_directory = 'unbg'
+shield = pygame.image.load('images\image (2).png')
+shield_icon = pygame.image.load('images\icon_shield.png')
+for filename in os.listdir(block_directory):
+    if filename.endswith(".png"):
+        image = pygame.image.load(os.path.join(block_directory, filename)).convert_alpha()  # Load with alpha channel
+        block_images.append(image)
+red_surface = pygame.Surface((100, 100), pygame.SRCALPHA)  # Создаем поверхность с альфа-каналом
+red_surface.fill((255, 0, 0, 128))  # Заполняем красным цветом с
+green_surface = pygame.Surface((200, 120), pygame.SRCALPHA)  # Создаем поверхность с альфа-каналом
+green_surface.fill((0, 255, 0, 200))  # Заполняем красным цветом с
+# Bonus coffee
+bonus_coffee = pygame.image.load('images\cofe.png')
+coffe_life = pygame.image.load('images\coffee.png')
+red_balls = []
+################################################################################################
+bg_window = pygame.image.load('images\windows_xp_original-wallpaper-1280x800-transformed.jpeg')
+first_frame = pygame.image.load('images\\10 (3).jpg')
+second_frame = pygame.image.load('images\\11.jpg')
+shield_picked_up = False
+shield_pickup_time = None
+# Function to create red balls
+def create_shield(x, y):
+    red_ball_rect = pygame.Rect(x, y, 100, 100)  # Size of the red ball
+    if not any(shield1['rect'] == red_ball_rect for shield1 in shields):
+        red_balls.append({'rect': red_ball_rect, 'speed': 2, 'radius': 5})
 
+def create_red_ball(x, y):
+    shield_ball_rect = pygame.Rect(x, y, 100, 100)  # Size of the red ball
+    if not any(ball['rect'] == shield_ball_rect for ball in red_balls):
+        shields.append({'rect': shield_ball_rect, 'speed': 2, 'radius': 5})
 
-run = True
+# Function to update red balls
+def update_red_balls():
+    global red_balls, H, sp,sp2,coffe_counter
+    for ball in red_balls:
+        ball['rect'].y += ball['speed']
+        # Remove balls that go out of the screen
+        if ball['rect'].top > H:
+            red_balls.remove(ball)
+        else:
+            screen.blit(bonus_coffee, ball['rect'])
+            # Check collision with paddle
+            if paddle.colliderect(ball['rect']):
+                sp += 1
+                sp2 = sp2 + 1
+                coffe_counter +=1
+                red_balls.remove(ball)
+                coin_colision_sound.play()
+def update_shields():
+    global shields, H, shield_picked_up, shield_pickup_time, barrier, coun
+    for shield1 in shields:
+        shield1['rect'].y += shield1['speed']
+        # Remove shields that go out of the screen
+        if shield1['rect'].top > H:
+            shields.remove(shield1)
+        else:
+            screen.blit(shield_icon, shield1['rect'])
+            # Check collision with paddle
+            if paddle.colliderect(shield1['rect']):
+                shields.remove(shield1)
+                coin_colision_sound.play()
+                barrier = True
+sound_played = False
+timer2 = False
+frame2 = True
+agree = True
+timer = True
+player = True
+win_agree = True
+coffe1  = False
+coffe2 = False
+coffe3 = False
+unloose = True
+second_chance = False
+retry = True
+new_game = False
+timer2 = False
+space_agree = False
+passed_agree = True
+frame3 = True
+sp = 5
+sp2 = 0
+coffe_counter = 0
+# Paddle settings
+paddleW = 185
+paddleH = 1
+paddleSpeed = 20 + sp
+paddle_surface = pygame.Surface((paddleW, paddleH), pygame.SRCALPHA)  # Create surface with alpha channel
+paddle = paddle_surface.get_rect(center=(W // 2, H - paddleH - 50))  # Center paddle
+pygame.draw.rect(paddle_surface, (255, 255, 255, 0), paddle)  # Draw transparent rectangle on surface
+passed_after = False
+# CD settings
+cd_image_path = 'images\cd_ball.png'
+glass_paddle = pygame.image.load('images\Remove-bg.ai_1713611941284.png')
+wasted_sound = pygame.mixer.Sound('audio\gta-v-wasted-101soundboards (mp3cut.net) (1).mp3')
+passed_sound = pygame.mixer.Sound('audio\gta-san-andreas-mission-passed-made-with-Voicemod.mp3')
+button = pygame.image.load('images\IMG_6475-removebg-preview-removebg-preview.png')
+cd = pygame.image.load(cd_image_path)
+cd_radius = 50
+cd_rect = cd.get_rect()
+cd_ball = pygame.Rect(random.randrange(cd_rect.width, W - cd_rect.width), H // 2, cd_rect.width, cd_rect.height)
+bonus_cd = pygame.Rect(random.randrange(cd_rect.width, W - cd_rect.width), H // 2, cd_rect.width, cd_rect.height)
+
+ballSpeed = 6
+dx, dy = 1, -1
+frames = ['images\\10 (3).jpg','images\\11.jpg','images\\21.jpg']
+frame_counter = 0
+game_font = pygame.font.SysFont('comicsansms', 50, True)
+settings_text = game_font.render('Settings', True, 'Black')
+
+# Game score
+game_score = 0
+game_score_font = pygame.font.SysFont('comicsansms', 40)
+game_score_text = game_score_font.render(f'Your game score is: {game_score}', True, ("black"))
+game_score_rect = game_score_text.get_rect()
+game_score_rect.center = (210, 20)
+
+# Catching sound
+collision_sound = pygame.mixer.Sound('audio\zvuk-podkljuchenija-usb-windows-10.mp3')
+colision_sound2 = pygame.mixer.Sound('audio\zvuk-otkljuchenija-usb-windows-10.mp3')
+coin_colision_sound = pygame.mixer.Sound('audio\Coin_Pick (mp3cut.net) (2).mp3')
+cls1 = True
+clss2 = False
+
+def detect_collision(dx, dy, cd_ball, rect):
+    if dx > 0:
+        delta_x = cd_ball.right - rect.left
+    else:
+        delta_x = rect.right - cd_ball.left
+    if dy > 0:
+        delta_y = cd_ball.bottom - rect.top
+    else:
+        delta_y = rect.bottom - cd_ball.top
+
+    if abs(delta_x - delta_y) < 10:
+        dx, dy = -dx, -dy
+    if delta_x > delta_y:
+        dy = -dy
+    elif delta_y > delta_x:
+        dx = -dx
+    return dx, dy
+frame = False
+# Load block positions
+block_list = [pygame.Rect(10 + 120 * i, 50 + 70 * j, 100, 50) for i in range(10) for j in range(4)]
+block_flags = [False] * len(block_list)
+blocks = [(random.choice(block_images), block_pos) for block_pos in block_list]
+
+# Game over Screen
+lose_font = pygame.font.SysFont('comicsansms', 40)
+lose_text = lose_font.render('Game Over', True, (255, 255, 255))
+lose_text_rect = lose_text.get_rect()
+lose_text_rect.center = (W // 2, H // 2)
+wasted = pygame.image.load('images\mission_failed-removebg-preview.png')
+passed = pygame.image.load('images\mission_passed-removebg-preview.png')
+
+# Win Screen
+win_font = pygame.font.SysFont('comicsansms', 40)
+win_text = win_font.render('You win', True, (0, 0, 0))
+win_text_rect = win_text.get_rect()
+win_text_rect.center = (W // 2, H // 2)
+counter = 0
+done = True
+flappy_pac = False
+bottom_barrier_visible = False
+bottom_barrier_time = 0
+while flappy_start_cycle:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            flappy_start_cycle = False
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1:
+                if flappy_surface.get_rect(topleft=(480,520)).collidepoint(event.pos):
+                    flappy_start_cycle = False
+                    flappy_run = True
+    screen.blit(flappy_start,(0,0))
+    #pygame.draw.rect(screen,"red",(480,520,240,115))
+    pygame.display.update()
+while flappy_run:
+    clock.tick(fps)
+
+    screen.blit(flappy_bg,(0,0))
+    pipe_group.draw(screen)
+    bird_group.draw(screen)
+    bird_group.update()
+
+    #screen.blit(ground_img, (400, 450))
+
+    if len(pipe_group) > 0:
+        if bird_group.sprites()[0].rect.right > pipe_group.sprites()[0].rect.right\
+            and bird_group.sprites()[0].rect.left < pipe_group.sprites()[0].rect.right\
+            and pass_pipe == False:
+            pass_pipe = True
+        if pass_pipe == True:
+            if bird_group.sprites()[0].rect.left > pipe_group.sprites()[0].rect.right:
+                score += 1
+                score_counter +=1
+                print("Score:", score)
+                pass_pipe = False
+    screen.blit(flappy_text_surface, flappy_text_rect)
+    draw_score(score)
+    if pygame.sprite.groupcollide(bird_group, pipe_group, False, False) or flappy.rect.top < 0:
+        game_over = True
+    if flappy.rect.bottom >= 768:
+        game_over = True
+        flying = False
+    if score_counter == 10:
+        flappy_run = False
+        runer2 = True
+    if flying == True and game_over == False:
+        time_now = pygame.time.get_ticks()
+        if time_now - last_pipe > pipe_frequency:
+            pipe_height = random.randint(-100, 100)
+            btm_pipe = Pipe(screen_width, int(screen_height / 2) + pipe_height, -1)
+            top_pipe = Pipe(screen_width, int(screen_height / 2) + pipe_height, 1)
+            pipe_group.add(btm_pipe)
+            pipe_group.add(top_pipe)
+            last_pipe = time_now
+    
+        pipe_group.update()
+
+        ground_scroll -= scroll_speed
+        if abs(ground_scroll) > 35:
+            ground_scroll = 0
+    if game_over == True:
+        if button_flappy.draw():
+            game_over = False
+            score = reset_game()
+            score_counter = 0
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            flappy_run = False
+        if event.type == pygame.MOUSEBUTTONDOWN and flying == False and game_over == False:
+            flying = True
+    pygame.display.update()
+flappy_pac = True
+while runer2:
+    WIDTH = 1200
+    HEIGHT = 800
+    run = False
+    flappy_to_pac_surface = pygame.Surface((100, 100), pygame.SRCALPHA)  # Создаем поверхность с альфа-каналом
+    flappy_to_pac_surface.fill((255, 0, 0, 255))  # Заполняем красным цветом с 
+    #screen2 = pygame.display.set_mode((1200, 800))
+    if  flappy_pac:
+        screen.blit(flappy_win,(0,0))
+    if not flappy_pac:
+        screen.blit(menu,(0,0))
+    #pygame.draw.rect(screen,"red",(493,635,240,115))
+    if flappy_pac:
+        screen.blit(button,(1000,600))
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            runer2 = False
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1:
+                if green_surface.get_rect(topleft=(493, 635)).collidepoint(event.pos):
+                     runer2 = False
+                     run = True
+                     HEIGHT = 950
+                     WIDTH = 900
+                     screen = pygame.display.set_mode((WIDTH, HEIGHT))
+                elif button.get_rect(topleft=(1000,600)).collidepoint(event.pos):
+                    flappy_pac = False
+                    
+    #pygame.draw.rect(screen,"red",(1000,600,11))
+    pygame.display.update()      
 while run:
-    timer.tick(fps)
+    clock.tick(fps)
     if counter < 19:
         counter += 1
         if counter > 3:
@@ -1347,8 +1786,8 @@ while run:
     if clyde.in_box and clyde_dead:
         clyde_dead = False
 
-    pygame.display.flip()
-runer2 = False
+    pygame.display.flip()       
+    
 if end_game:
     while run3:
         for event in pygame.event.get():
@@ -1364,186 +1803,10 @@ if end_game:
             screen.blit(button,(740,640))
             #pygame.draw.rect(screen,"red",(740,640,100,100))
         pygame.display.update()
-W, H = 1200, 800
-FPS = 60
-game_score = 0
-paused = True
-coun = 0
-screen = pygame.display.set_mode((W, H), pygame.RESIZABLE)
-clock = pygame.time.Clock()
-bg = (0, 0, 0)
-left_a = 410
-left_d = 540
-barrier = False
-# Load block images from directory
-shields = []
-block_images = []
-block_directory = 'unbg'
-shield = pygame.image.load('images\image (2).png')
-shield_icon = pygame.image.load('images\icon_shield.png')
-for filename in os.listdir(block_directory):
-    if filename.endswith(".png"):
-        image = pygame.image.load(os.path.join(block_directory, filename)).convert_alpha()  # Load with alpha channel
-        block_images.append(image)
-red_surface = pygame.Surface((100, 100), pygame.SRCALPHA)  # Создаем поверхность с альфа-каналом
-red_surface.fill((255, 0, 0, 128))  # Заполняем красным цветом с
-green_surface = pygame.Surface((200, 120), pygame.SRCALPHA)  # Создаем поверхность с альфа-каналом
-green_surface.fill((0, 255, 0, 200))  # Заполняем красным цветом с
-# Bonus coffee
-bonus_coffee = pygame.image.load('images\cofe.png')
-coffe_life = pygame.image.load('images\coffee.png')
-red_balls = []
-################################################################################################
-bg_window = pygame.image.load('images\windows_xp_original-wallpaper-1280x800-transformed.jpeg')
-first_frame = pygame.image.load('images\\10 (3).jpg')
-second_frame = pygame.image.load('images\\11.jpg')
-shield_picked_up = False
-shield_pickup_time = None
-# Function to create red balls
-def create_shield(x, y):
-    red_ball_rect = pygame.Rect(x, y, 100, 100)  # Size of the red ball
-    if not any(shield1['rect'] == red_ball_rect for shield1 in shields):
-        red_balls.append({'rect': red_ball_rect, 'speed': 2, 'radius': 5})
-
-def create_red_ball(x, y):
-    shield_ball_rect = pygame.Rect(x, y, 100, 100)  # Size of the red ball
-    if not any(ball['rect'] == shield_ball_rect for ball in red_balls):
-        shields.append({'rect': shield_ball_rect, 'speed': 2, 'radius': 5})
-
-# Function to update red balls
-def update_red_balls():
-    global red_balls, H, sp,sp2,coffe_counter
-    for ball in red_balls:
-        ball['rect'].y += ball['speed']
-        # Remove balls that go out of the screen
-        if ball['rect'].top > H:
-            red_balls.remove(ball)
-        else:
-            screen.blit(bonus_coffee, ball['rect'])
-            # Check collision with paddle
-            if paddle.colliderect(ball['rect']):
-                sp += 1
-                sp2 = sp2 + 1
-                coffe_counter +=1
-                red_balls.remove(ball)
-                coin_colision_sound.play()
-def update_shields():
-    global shields, H, shield_picked_up, shield_pickup_time, barrier, coun
-    for shield1 in shields:
-        shield1['rect'].y += shield1['speed']
-        # Remove shields that go out of the screen
-        if shield1['rect'].top > H:
-            shields.remove(shield1)
-        else:
-            screen.blit(shield_icon, shield1['rect'])
-            # Check collision with paddle
-            if paddle.colliderect(shield1['rect']):
-                shields.remove(shield1)
-                coin_colision_sound.play()
-                barrier = True
-sound_played = False
-timer2 = False
-frame2 = True
-agree = True
-timer = True
-player = True
-win_agree = True
-coffe1  = False
-coffe2 = False
-coffe3 = False
-unloose = True
-second_chance = False
-retry = True
-new_game = False
-timer2 = False
-space_agree = False
-passed_agree = True
-frame3 = True
-sp = 5
-sp2 = 0
-coffe_counter = 0
-# Paddle settings
-paddleW = 185
-paddleH = 1
-paddleSpeed = 20 + sp
-paddle_surface = pygame.Surface((paddleW, paddleH), pygame.SRCALPHA)  # Create surface with alpha channel
-paddle = paddle_surface.get_rect(center=(W // 2, H - paddleH - 50))  # Center paddle
-pygame.draw.rect(paddle_surface, (255, 255, 255, 0), paddle)  # Draw transparent rectangle on surface
-passed_after = False
-# CD settings
-cd_image_path = 'images\cd_ball.png'
-glass_paddle = pygame.image.load('images\Remove-bg.ai_1713611941284.png')
-wasted_sound = pygame.mixer.Sound('audio\gta-v-wasted-101soundboards (mp3cut.net) (1).mp3')
-passed_sound = pygame.mixer.Sound('audio\gta-san-andreas-mission-passed-made-with-Voicemod.mp3')
-button = pygame.image.load('images\IMG_6475-removebg-preview-removebg-preview.png')
-cd = pygame.image.load(cd_image_path)
-cd_radius = 50
-cd_rect = cd.get_rect()
-cd_ball = pygame.Rect(random.randrange(cd_rect.width, W - cd_rect.width), H // 2, cd_rect.width, cd_rect.height)
-bonus_cd = pygame.Rect(random.randrange(cd_rect.width, W - cd_rect.width), H // 2, cd_rect.width, cd_rect.height)
-
-ballSpeed = 6
-dx, dy = 1, -1
-frames = ['images\\10 (3).jpg','images\\11.jpg','images\\21.jpg']
-frame_counter = 0
-game_font = pygame.font.SysFont('comicsansms', 50, True)
-settings_text = game_font.render('Settings', True, 'Black')
-
-# Game score
-game_score = 0
-game_score_font = pygame.font.SysFont('comicsansms', 40)
-game_score_text = game_score_font.render(f'Your game score is: {game_score}', True, ("black"))
-game_score_rect = game_score_text.get_rect()
-game_score_rect.center = (210, 20)
-
-# Catching sound
-collision_sound = pygame.mixer.Sound('audio\zvuk-podkljuchenija-usb-windows-10.mp3')
-colision_sound2 = pygame.mixer.Sound('audio\zvuk-otkljuchenija-usb-windows-10.mp3')
-coin_colision_sound = pygame.mixer.Sound('audio\Coin_Pick (mp3cut.net) (2).mp3')
-cls1 = True
-clss2 = False
-
-def detect_collision(dx, dy, cd_ball, rect):
-    if dx > 0:
-        delta_x = cd_ball.right - rect.left
-    else:
-        delta_x = rect.right - cd_ball.left
-    if dy > 0:
-        delta_y = cd_ball.bottom - rect.top
-    else:
-        delta_y = rect.bottom - cd_ball.top
-
-    if abs(delta_x - delta_y) < 10:
-        dx, dy = -dx, -dy
-    if delta_x > delta_y:
-        dy = -dy
-    elif delta_y > delta_x:
-        dx = -dx
-    return dx, dy
-frame = False
-# Load block positions
-block_list = [pygame.Rect(10 + 120 * i, 50 + 70 * j, 100, 50) for i in range(10) for j in range(4)]
-block_flags = [False] * len(block_list)
-blocks = [(random.choice(block_images), block_pos) for block_pos in block_list]
-
-# Game over Screen
-lose_font = pygame.font.SysFont('comicsansms', 40)
-lose_text = lose_font.render('Game Over', True, (255, 255, 255))
-lose_text_rect = lose_text.get_rect()
-lose_text_rect.center = (W // 2, H // 2)
-wasted = pygame.image.load('images\mission_failed-removebg-preview.png')
-passed = pygame.image.load('images\mission_passed-removebg-preview.png')
-
-# Win Screen
-win_font = pygame.font.SysFont('comicsansms', 40)
-win_text = win_font.render('You win', True, (0, 0, 0))
-win_text_rect = win_text.get_rect()
-win_text_rect.center = (W // 2, H // 2)
-counter = 0
-done = True
-bottom_barrier_visible = False
-bottom_barrier_time = 0
 if runer2:
+    WIDTH = 1200
+    HEIGHT = 800
+    screen = pygame.display.set_mode((WIDTH, HEIGHT))
     while runer2:
         done = True
         screen.blit(pygame.image.load('images\\arkanoid.jpg'),(0,0))
@@ -1755,8 +2018,4 @@ while not done:
         pygame.display.update()  
     if win_agree:
         pygame.display.flip()
-    clock.tick(FPS)       
-        
-    
-
-    
+    clock.tick(fps)
